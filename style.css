@@ -1,0 +1,384 @@
+/* Matches the look of arithmetic.zetamac.com as closely as possible. */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  color: #000;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+a { color: #00e; }
+a:visited { color: #551a8b; }
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ---------- Start page ---------- */
+
+/* grey panel behind the settings, like standard zetamac */
+#start-view .container {
+  max-width: 620px;
+  background: #ddd;
+  padding: 1px 40px 30px 40px;
+}
+
+#start-view h1 {
+  font-size: 2.6em;
+  font-weight: bold;
+  margin: 40px 0 20px 0;
+}
+
+#start-view p {
+  font-size: 1.15em;
+  margin: 18px 0;
+}
+
+.topnav {
+  position: absolute;
+  top: 10px;
+  right: 16px;
+  font-size: 0.95em;
+}
+
+.opts {
+  font-size: 1.15em;
+}
+
+.opt-row { margin: 10px 0 2px 0; }
+.opt-row label { cursor: pointer; }
+
+.opt-row input[type="checkbox"] {
+  width: 1.05em;
+  height: 1.05em;
+  vertical-align: -2px;
+  margin-right: 8px;
+  accent-color: #1a73e8;
+}
+
+.opt-sub {
+  margin: 2px 0 12px 38px;
+  font-size: 1em;
+}
+
+.range-input {
+  width: 3.2em;
+  font-size: 1em;
+  font-family: inherit;
+  text-align: right;
+  padding: 3px 6px;
+  border: 1px solid #767676;
+  border-radius: 3px;
+}
+
+/* hide number spinners */
+.range-input::-webkit-outer-spin-button,
+.range-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.range-input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+.duration-row {
+  margin: 24px 0 10px 0;
+  font-size: 1.15em;
+}
+
+#duration {
+  font-size: 1em;
+  font-family: inherit;
+  padding: 3px;
+}
+
+.start-row {
+  text-align: right;
+  margin: 30px 0 50px 0;
+}
+
+button.zbtn {
+  font-size: 1.15em;
+  font-family: inherit;
+  padding: 6px 18px;
+  background: #efefef;
+  border: 1px solid #767676;
+  border-radius: 3px;
+  cursor: pointer;
+}
+button.zbtn:hover { background: #e5e5e5; }
+button.zbtn:active { background: #d5d5d5; }
+
+.hard-note {
+  font-size: 0.85em;
+  color: #555;
+  margin-top: 6px;
+}
+
+/* ---------- Game ---------- */
+
+.game-topbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 22px;
+  font-size: 1.35em;
+}
+
+/* the game view fills the window so the problem band centers on screen */
+#game-view {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.problem-band {
+  background: #ddd;
+  width: 100%;
+  margin: auto 0;          /* vertically centered in the remaining space */
+  padding: 48px 0;
+  text-align: center;
+}
+
+#problem-text {
+  font-size: 3.4em;
+}
+
+#answer-input {
+  font-size: 3.4em;        /* match the problem text, like zetamac */
+  font-family: inherit;
+  width: 4.2em;
+  padding: 2px 10px;
+  border: 1px solid #767676;
+  border-radius: 3px;
+  vertical-align: baseline;
+}
+#answer-input::-webkit-outer-spin-button,
+#answer-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* ---------- End screen ---------- */
+
+.end-band {
+  background: #ddd;
+  width: 100%;
+  margin-top: 60px;
+  padding: 22px 0 18px 0;
+  text-align: center;
+}
+
+.end-band .final-score { font-size: 1.9em; }
+
+.end-band .end-links {
+  font-size: 0.95em;
+  margin-top: 6px;
+}
+
+.pool-note {
+  text-align: center;
+  font-size: 0.9em;
+  color: #555;
+  margin-top: 14px;
+}
+
+/* ---------- Review table ---------- */
+
+.review-wrap {
+  max-width: 800px;
+  margin: 30px auto 60px auto;
+  padding: 0 20px;
+}
+
+.review-wrap h2 {
+  font-size: 1.25em;
+  margin-bottom: 6px;
+}
+
+.review-meta {
+  font-size: 0.9em;
+  color: #555;
+  margin-bottom: 14px;
+}
+
+table.review {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.95em;
+  font-variant-numeric: tabular-nums;
+}
+
+table.review th {
+  text-align: left;
+  font-weight: bold;
+  border-bottom: 2px solid #bbb;
+  padding: 6px 8px;
+}
+
+table.review td {
+  border-bottom: 1px solid #e3e3e3;
+  padding: 6px 8px;
+}
+
+table.review td.num, table.review th.num { text-align: right; }
+
+tr.slow-row td { background: #fff7df; }
+
+.flag-btn {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-size: 1.05em;
+  padding: 0 4px;
+  color: #bbb;
+}
+.flag-btn.flagged { color: #d03b3b; }
+
+.tip-btn {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-size: 0.9em;
+  color: #00e;
+  text-decoration: underline;
+  padding: 0;
+  font-family: inherit;
+}
+
+tr.tip-row td {
+  background: #f4f7fd;
+  font-size: 0.92em;
+  color: #333;
+  padding: 8px 12px;
+  border-left: 3px solid #2a78d6;
+}
+
+/* ---------- Stats page ---------- */
+
+.stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 30px;
+}
+
+.stats-header h1 { font-size: 1.9em; margin: 0; }
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
+  margin: 22px 0 8px 0;
+  font-size: 0.95em;
+}
+
+.filter-row select {
+  font-size: 1em;
+  font-family: inherit;
+  padding: 2px 4px;
+  max-width: 320px;
+}
+
+.filter-row label { cursor: pointer; }
+
+.tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.tile {
+  flex: 1 1 118px;
+  border: 1px solid rgba(11,11,11,0.10);
+  border-radius: 6px;
+  padding: 12px 14px;
+  background: #fcfcfb;
+}
+
+.tile .t-label { font-size: 0.85em; color: #52514e; }
+.tile .t-value { font-size: 1.7em; font-weight: 600; margin-top: 2px; }
+.tile .t-delta { font-size: 0.8em; margin-top: 2px; color: #52514e; }
+.tile .t-delta.up { color: #006300; }
+.tile .t-delta.down { color: #d03b3b; }
+
+.chart-card {
+  border: 1px solid rgba(11,11,11,0.10);
+  border-radius: 6px;
+  background: #fcfcfb;
+  padding: 14px 16px 8px 16px;
+  margin: 16px 0;
+}
+
+.chart-card h3 {
+  font-size: 1.02em;
+  margin: 0 0 2px 0;
+  font-weight: bold;
+}
+
+.chart-sub { font-size: 0.82em; color: #898781; margin-bottom: 8px; }
+
+.legend {
+  display: flex;
+  gap: 16px;
+  font-size: 0.82em;
+  color: #52514e;
+  margin: 4px 0 2px 0;
+}
+
+.legend .key {
+  display: inline-block;
+  width: 16px;
+  height: 0;
+  border-top: 2px solid;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+
+.chart-svg-wrap { position: relative; }
+
+.viz-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: #fff;
+  border: 1px solid rgba(11,11,11,0.15);
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  padding: 6px 9px;
+  font-size: 0.8em;
+  color: #0b0b0b;
+  white-space: nowrap;
+  display: none;
+  z-index: 5;
+}
+
+.viz-tooltip .tt-title { color: #898781; margin-bottom: 2px; }
+.viz-tooltip .tt-row { display: flex; align-items: center; gap: 6px; }
+.viz-tooltip .tt-key { width: 12px; border-top: 2px solid; display: inline-block; }
+.viz-tooltip .tt-val { font-weight: bold; }
+.viz-tooltip .tt-name { color: #52514e; }
+
+.empty-note {
+  color: #898781;
+  font-size: 0.95em;
+  padding: 24px 0;
+  text-align: center;
+}
+
+.history-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 8px 0 40px 0;
+  font-size: 0.9em;
+}
+
+tr.hist-row { cursor: pointer; }
+tr.hist-row:hover td { background: #f5f5f5; }
+tr.hist-detail-row > td { padding: 0 0 14px 0; }
+
+.mode-tag {
+  font-size: 0.78em;
+  border: 1px solid #c3c2b7;
+  border-radius: 3px;
+  padding: 0 5px;
+  color: #52514e;
+}

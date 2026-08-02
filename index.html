@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arithmetic Game — Trainer</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ Start / settings ============ -->
+<div id="start-view">
+  <div class="topnav"><a href="stats.html">Stats</a></div>
+  <div class="container">
+    <h1>Arithmetic Game</h1>
+    <p>The Arithmetic Game is a fast-paced speed drill where you are given
+       two minutes to solve as many arithmetic problems as you can.</p>
+    <p>Every run is timed per problem and saved locally — see the
+       <a href="stats.html">stats page</a> for progress graphs and slow-problem review.</p>
+
+    <div class="opts">
+      <div class="opt-row">
+        <label><input type="checkbox" id="op-add" checked> Addition</label>
+      </div>
+      <div class="opt-sub">
+        Range: (<input class="range-input" type="number" id="add-l1" value="2"> to
+        <input class="range-input" type="number" id="add-h1" value="100">) + (<input
+          class="range-input" type="number" id="add-l2" value="2"> to
+        <input class="range-input" type="number" id="add-h2" value="100">)
+      </div>
+
+      <div class="opt-row">
+        <label><input type="checkbox" id="op-sub" checked> Subtraction</label>
+      </div>
+      <div class="opt-sub">Addition problems in reverse.</div>
+
+      <div class="opt-row">
+        <label><input type="checkbox" id="op-mul" checked> Multiplication</label>
+      </div>
+      <div class="opt-sub">
+        Range: (<input class="range-input" type="number" id="mul-l1" value="2"> to
+        <input class="range-input" type="number" id="mul-h1" value="12">) × (<input
+          class="range-input" type="number" id="mul-l2" value="2"> to
+        <input class="range-input" type="number" id="mul-h2" value="100">)
+      </div>
+
+      <div class="opt-row">
+        <label><input type="checkbox" id="op-div" checked> Division</label>
+      </div>
+      <div class="opt-sub">Multiplication problems in reverse.</div>
+    </div>
+
+    <div class="duration-row">
+      Duration: <select id="duration">
+        <option value="30">30 seconds</option>
+        <option value="60">60 seconds</option>
+        <option value="120" selected>120 seconds</option>
+        <option value="300">300 seconds</option>
+        <option value="600">600 seconds</option>
+      </select>
+    </div>
+
+    <div class="start-row">
+      <button class="zbtn" id="hard-btn" type="button">Practice difficult problems</button>
+      <button class="zbtn" id="start-btn" type="button">Start</button>
+      <div class="hard-note" id="hard-note"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Game ============ -->
+<div id="game-view" style="display:none">
+  <div class="game-topbar">
+    <span id="seconds-left">Seconds left: 120</span>
+    <span id="score-label">Score: 0</span>
+  </div>
+  <div class="problem-band">
+    <span id="problem-text">2 + 2 = </span><input id="answer-input" type="text"
+      inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+</div>
+
+<!-- ============ End of run ============ -->
+<div id="end-view" style="display:none">
+  <div class="game-topbar">
+    <span id="end-seconds">Seconds left: 0</span>
+    <span id="end-score-top">Score: 0</span>
+  </div>
+  <div class="end-band">
+    <div class="final-score" id="final-score">Score: 0</div>
+    <div class="end-links">
+      <a href="#" id="try-again">Try again</a> or <a href="#" id="change-settings">change settings</a>
+      · <a href="stats.html">stats</a>
+    </div>
+  </div>
+  <div class="pool-note" id="pool-note"></div>
+  <div class="review-wrap">
+    <h2>Problem review</h2>
+    <div id="review-container"></div>
+  </div>
+</div>
+
+<script src="js/storage.js"></script>
+<script src="js/problems.js"></script>
+<script src="js/tips.js"></script>
+<script src="js/review.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

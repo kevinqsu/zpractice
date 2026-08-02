@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arithmetic Game — Stats</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+
+  <div class="stats-header">
+    <h1>Stats</h1>
+    <div><a href="index.html">← back to the game</a></div>
+  </div>
+
+  <div class="filter-row" id="filter-row">
+    <span>
+      Settings:
+      <select id="sig-filter"></select>
+    </span>
+    <label><input type="checkbox" id="include-hard"> include hard runs</label>
+    <label><input type="checkbox" id="remove-outliers" checked> remove outliers</label>
+  </div>
+
+  <div id="stats-body"></div>
+
+  <h2 style="font-size:1.25em; margin-top:34px;">Run history</h2>
+  <div id="history-container"></div>
+
+  <div class="history-controls">
+    <button class="zbtn" id="export-btn" type="button">Export data</button>
+    <button class="zbtn" id="import-btn" type="button">Import data</button>
+    <input type="file" id="import-file" accept="application/json" style="display:none">
+    <span id="io-status"></span>
+  </div>
+
+</div>
+
+<script src="js/storage.js"></script>
+<script src="js/problems.js"></script>
+<script src="js/tips.js"></script>
+<script src="js/review.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/stats.js"></script>
+</body>
+</html>
