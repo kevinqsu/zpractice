@@ -382,3 +382,19 @@ tr.hist-detail-row > td { padding: 0 0 14px 0; }
   padding: 0 5px;
   color: #52514e;
 }
+
+tr.excluded-row td { color: #a9a9a9; }
+tr.excluded-row td.num { text-decoration: line-through; }
+
+.ask-btn { color: #b25f00; }
+
+.storage-note {
+  font-size: 0.82em;
+  color: #898781;
+  margin: 10px 0 0 0;
+}
+
+.storage-warn {
+  color: #b25f00;
+  margin-top: 4px;
+}

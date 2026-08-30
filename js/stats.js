@@ -61,10 +61,30 @@
   function filteredRuns() {
     var sig = sigFilter.value;
     return ZTT.getRuns().filter(function (r) {
+      if (r.excluded) return false;
       if (!includeHard.checked && r.mode === "hard") return false;
       if (sig !== "*" && runSig(r) !== sig) return false;
       return true;
     }).sort(function (a, b) { return a.ts - b.ts; });
+  }
+
+  /* Modified z-score of each run's score against non-excluded normal runs
+     sharing its settings signature. Used to spot "near-outlier" low runs. */
+  function runZMap() {
+    var groups = {};
+    ZTT.getRuns().forEach(function (r) {
+      if (r.mode === "hard" || r.excluded || !r.score) return;
+      var s = runSig(r);
+      (groups[s] = groups[s] || []).push(r);
+    });
+    var zmap = {};
+    Object.keys(groups).forEach(function (s) {
+      var rs = groups[s];
+      if (rs.length < 5) return; // too little history to judge
+      var zs = ZTT.modifiedZ(rs.map(function (r) { return r.score; }));
+      rs.forEach(function (r, i) { zmap[r.id] = zs[i]; });
+    });
+    return zmap;
   }
 
   /* ---------- tiles ---------- */
@@ -103,11 +123,23 @@
       rate = totT / totS;
     }
 
+    /* pool tile scopes to the selected settings, like the start page does */
+    var sig = sigFilter.value, poolCount, poolNote;
+    if (sig === "*") {
+      poolCount = ZTT.getPool().length;
+      poolNote = "problems collected";
+    } else {
+      var sample = null;
+      ZTT.getRuns().forEach(function (r) { if (runSig(r) === sig && r.settings) sample = r; });
+      poolCount = sample ? ZTT.getPool(sample.settings).length : ZTT.getPool().length;
+      poolNote = "for these settings";
+    }
+
     tiles.appendChild(tile("Best score", String(best)));
     tiles.appendChild(tile("Average, last 10", a10 === null ? "—" : a10.toFixed(1), deltaText, deltaCls));
     tiles.appendChild(tile("Runs recorded", String(runs.length)));
     tiles.appendChild(tile("Seconds per problem", rate === null ? "—" : rate.toFixed(2) + " s", "last 10 runs"));
-    tiles.appendChild(tile("Difficult pool", String(ZTT.getPool().length), "problems collected"));
+    tiles.appendChild(tile("Difficult pool", String(poolCount), poolNote));
     body.appendChild(tiles);
   }
 
@@ -306,20 +338,22 @@
       return;
     }
 
+    var zmap = runZMap();
     var limit = showAllHistory ? runs.length : 30;
     var table = el("table", "review");
     var hr = el("tr");
-    [["When", ""], ["Mode", ""], ["Score", "num"], ["s / problem", "num"], ["Settings", ""]].forEach(function (h) {
+    [["When", ""], ["Mode", ""], ["Score", "num"], ["s / problem", "num"], ["Settings", ""], ["", ""]].forEach(function (h) {
       hr.appendChild(el("th", h[1], h[0]));
     });
     var thead = el("thead"); thead.appendChild(hr); table.appendChild(thead);
     var tbody = el("tbody");
 
     runs.slice(0, limit).forEach(function (r) {
-      var tr = el("tr", "hist-row");
+      var tr = el("tr", "hist-row" + (r.excluded ? " excluded-row" : ""));
       tr.appendChild(el("td", "", fmtDateTime(r.ts)));
       var modeTd = el("td");
       if (r.mode === "hard") modeTd.appendChild(el("span", "mode-tag", "hard"));
+      if (r.excluded) modeTd.appendChild(el("span", "mode-tag", "excluded"));
       tr.appendChild(modeTd);
       tr.appendChild(el("td", "num", String(r.score)));
       tr.appendChild(el("td", "num", r.score > 0 ? (r.duration / r.score).toFixed(2) : "—"));
@@ -328,12 +362,37 @@
       sigTd.style.fontSize = "0.85em";
       tr.appendChild(sigTd);
 
+      /* action cell: undo for excluded runs; an "exclude?" prompt for runs
+         scoring well below typical that the auto outlier filter won't catch */
+      var actTd = el("td");
+      if (r.excluded) {
+        var inc = el("button", "tip-btn", "include");
+        inc.title = "Put this run back into the stats.";
+        inc.addEventListener("click", function (e) {
+          e.stopPropagation();
+          ZTT.setRunExcluded(r.id, false);
+          render();
+        });
+        actTd.appendChild(inc);
+      } else if (zmap[r.id] !== undefined && zmap[r.id] <= -2.0) {
+        var ex = el("button", "tip-btn ask-btn", "low run — exclude?");
+        ex.title = "Scored well below your typical for these settings (went afk?). " +
+          "Click to leave it out of graphs and averages; it can be re-included any time.";
+        ex.addEventListener("click", function (e) {
+          e.stopPropagation();
+          ZTT.setRunExcluded(r.id, true);
+          render();
+        });
+        actTd.appendChild(ex);
+      }
+      tr.appendChild(actTd);
+
       var open = false, detailRow = null;
       tr.addEventListener("click", function () {
         if (open) { detailRow.remove(); open = false; return; }
         detailRow = el("tr", "hist-detail-row");
         var td = el("td");
-        td.colSpan = 5;
+        td.colSpan = 6;
         var wrap = el("div");
         wrap.style.padding = "10px 8px 4px 8px";
         ZReview.render(r, wrap, {});
@@ -355,6 +414,18 @@
       more.addEventListener("click", function () { showAllHistory = true; renderHistory(); });
       historyContainer.appendChild(more);
     }
+
+    /* storage meter — heavy use can approach the browser's localStorage cap */
+    var info = ZTT.storageInfo();
+    var noteText = "Storage: about " + info.pct + "% used · " + info.runs + " runs stored.";
+    if (info.pct >= 80) noteText += " Getting full — export your data soon.";
+    var note = el("div", "storage-note", noteText);
+    if (info.trimmed > 0) {
+      note.appendChild(el("div", "storage-warn",
+        "Storage filled up at some point and the " + info.trimmed +
+        " oldest runs were trimmed to make room. Export regularly to keep a full archive."));
+    }
+    historyContainer.appendChild(note);
   }
 
   /* ---------- main render ---------- */

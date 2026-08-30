@@ -11,8 +11,6 @@
   var problemText = document.getElementById("problem-text");
   var answerInput = document.getElementById("answer-input");
 
-  var MASTER_MS = 2500;    // a solve this fast counts toward a problem's mastery streak
-
   var state = null;
   var timerId = null;
 
@@ -61,15 +59,19 @@
   }
 
   function refreshHardNote() {
-    var n = ZTT.getPool().length;
+    /* the pool shown always matches the settings currently on the form */
+    var n = ZTT.getPool(readForm()).length;
+    var total = ZTT.getPool().length;
     var note = document.getElementById("hard-note");
     var btn = document.getElementById("hard-btn");
     if (n === 0) {
-      note.textContent = "No difficult problems collected yet — slow problems from your runs will gather here.";
+      note.textContent = total === 0
+        ? "No difficult problems collected yet — slow problems from your runs will gather here."
+        : "No difficult problems match these settings (" + total + " collected under other settings).";
       btn.disabled = true;
     } else {
       note.textContent = n + " difficult problem" + (n > 1 ? "s" : "") +
-        " collected; the run fills up with random problems once they are used up.";
+        " for these settings; the run fills up with random problems once they are used up.";
       btn.disabled = false;
     }
   }
@@ -90,7 +92,7 @@
 
     var queue = [];
     if (mode === "hard") {
-      queue = ZTT.getPool();
+      queue = ZTT.getPool(settings);
       /* newest flags first, then shuffle within the pool for variety */
       for (var i = queue.length - 1; i > 0; i--) {
         var j = Math.floor(Math.random() * (i + 1));
@@ -171,13 +173,25 @@
     var med = ZTT.median(times);
     var added = 0, mastered = 0;
 
+    /* Mastery thresholds adapt to the player's recent per-problem baseline
+       (median solve time over recent runs at these settings). */
+    var sig = ZTT.settingsSig(state.settings);
+    var baseline = ZTT.baselineMs(sig);
+    var goodMs = Math.min(3500, Math.max(1500, 2.5 * baseline));
+    var blazeMs = Math.max(900, 1.25 * baseline);
+    var sluggishMs = 2 * goodMs;
+
     state.problems.forEach(function (p) {
       var auto = (times.length >= 5 && p.t >= 2 * med && p.t >= 2000) || p.t >= 8000;
       if (ZTT.poolHas(p)) {
-        /* pooled problem encountered (hard run or by chance): update its streak.
-           Fast solves build toward mastery; a flagged-slow solve resets the
-           streak AND raises the requirement; anything between just resets. */
-        var outcome = p.t <= MASTER_MS ? "good" : (auto ? "slow" : "meh");
+        /* pooled problem encountered (hard run or by chance): update its
+           streak. Near-instant solves count double, fast solves count one,
+           sluggish ones reset, flagged-slow ones reset AND raise the bar. */
+        var outcome;
+        if (p.t <= blazeMs) outcome = "blaze";
+        else if (p.t <= goodMs) outcome = "good";
+        else if (auto || p.t > sluggishMs) outcome = "slow";
+        else outcome = "meh";
         p.flag = auto;
         if (ZTT.poolResult(p, outcome, p.t) === "mastered") mastered++;
       } else if (auto) {
@@ -190,7 +204,7 @@
       ts: Date.now(),
       mode: state.mode,
       settings: state.settings,
-      sig: ZTT.settingsSig(state.settings),
+      sig: sig,
       duration: state.duration,
       score: state.score,
       problems: state.problems
@@ -204,7 +218,7 @@
     if (added) noteBits.push(added + " problem" + (added > 1 ? "s" : "") + " added to the difficult pool");
     if (mastered) noteBits.push(mastered + " mastered and removed from the pool");
     if (state.mode === "hard" && !mastered && state.problems.some(function (p) { return p.fromPool; })) {
-      noteBits.push("mastery needs " + ZTT.DEFAULT_NEED + "+ fast solves in a row — hover a flag for progress");
+      noteBits.push("no problems mastered yet — hover a flag below for streak progress");
     }
     document.getElementById("pool-note").textContent = noteBits.join(" · ");
 
@@ -243,6 +257,10 @@
   startView.addEventListener("keydown", function (e) {
     if (e.key === "Enter" && e.target.tagName !== "BUTTON") startRun("normal");
   });
+
+  /* keep the difficult-problem count in sync with the settings form */
+  startView.addEventListener("change", refreshHardNote);
+  startView.addEventListener("input", refreshHardNote);
 
   fillForm(ZTT.getSettings());
   refreshHardNote();
