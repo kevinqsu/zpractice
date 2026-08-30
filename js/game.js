@@ -70,8 +70,7 @@
         : "No difficult problems match these settings (" + total + " collected under other settings).";
       btn.disabled = true;
     } else {
-      note.textContent = n + " difficult problem" + (n > 1 ? "s" : "") +
-        " for these settings; the run fills up with random problems once they are used up.";
+      note.textContent = n + " difficult problem" + (n > 1 ? "s" : "") + " for these settings.";
       btn.disabled = false;
     }
   }
@@ -93,7 +92,14 @@
     var queue = [];
     if (mode === "hard") {
       queue = ZTT.getPool(settings);
-      /* newest flags first, then shuffle within the pool for variety */
+      if (!queue.length) {
+        /* nothing to practice under these settings — stay on the start page */
+        fillForm(ZTT.getSettings());
+        refreshHardNote();
+        show(startView);
+        return;
+      }
+      /* shuffle the pool for variety */
       for (var i = queue.length - 1; i > 0; i--) {
         var j = Math.floor(Math.random() * (i + 1));
         var t = queue[i]; queue[i] = queue[j]; queue[j] = t;
@@ -134,6 +140,11 @@
     if (state.queue.length) {
       var q = state.queue.shift();
       p = { op: q.op, a: q.a, b: q.b, ans: q.ans, fromPool: true };
+    } else if (state.mode === "hard") {
+      /* the difficult pool is done — end the run rather than padding it
+         with random problems (the timer still caps a long pool) */
+      endRun();
+      return;
     } else {
       for (var tries = 0; tries < 6; tries++) {
         p = ZProblems.generate(state.settings);
@@ -168,6 +179,8 @@
     clearInterval(timerId);
     timerId = null;
     state.current = null;
+    var secsLeft = Math.max(0, Math.ceil((state.endAt - performance.now()) / 1000));
+    var poolDone = state.mode === "hard" && state.queue.length === 0 && secsLeft > 0;
 
     var times = state.problems.map(function (p) { return p.t; });
     var med = ZTT.median(times);
@@ -212,9 +225,10 @@
 
     document.getElementById("final-score").textContent = "Score: " + state.score;
     document.getElementById("end-score-top").textContent = "Score: " + state.score;
-    document.getElementById("end-seconds").textContent = "Seconds left: 0";
+    document.getElementById("end-seconds").textContent = "Seconds left: " + secsLeft;
 
     var noteBits = [];
+    if (poolDone) noteBits.push("difficult pool for these settings completed");
     if (added) noteBits.push(added + " problem" + (added > 1 ? "s" : "") + " added to the difficult pool");
     if (mastered) noteBits.push(mastered + " mastered and removed from the pool");
     if (state.mode === "hard" && !mastered && state.problems.some(function (p) { return p.fromPool; })) {
