@@ -1,4 +1,5 @@
-/* Game flow: settings form, timed drill, per-problem timing, end screen. */
+/* Game flow: settings form, timed drill, per-problem timing, end screen,
+   and zetamac-style game keys in the URL (optional, via a start-page toggle). */
 
 (function () {
 
@@ -10,6 +11,7 @@
   var scoreLabel = document.getElementById("score-label");
   var problemText = document.getElementById("problem-text");
   var answerInput = document.getElementById("answer-input");
+  var keyToggle = document.getElementById("key-toggle");
 
   var state = null;
   var timerId = null;
@@ -29,7 +31,11 @@
     document.getElementById("mul-h1").value = s.mulH1;
     document.getElementById("mul-l2").value = s.mulL2;
     document.getElementById("mul-h2").value = s.mulH2;
-    document.getElementById("duration").value = String(s.duration);
+    var sel = document.getElementById("duration");
+    var has = false;
+    for (var i = 0; i < sel.options.length; i++) if (sel.options[i].value === String(s.duration)) has = true;
+    if (!has && s.duration > 0) sel.add(new Option(s.duration + " seconds", String(s.duration)));
+    sel.value = String(s.duration);
   }
 
   function intVal(id, fallback) {
@@ -75,6 +81,121 @@
     }
   }
 
+  /* ---------- auto-reset preference ----------
+     When on, starting a run puts a game key in the URL so a refresh starts a
+     new run with the same settings immediately. When off, the URL stays
+     clean and a refresh returns to this page. Stored per browser; on by
+     default (the original zetamac behavior). */
+
+  var PREF_KEY = "ztt.urlkeys";
+
+  function autoResetOn() {
+    try { return localStorage.getItem(PREF_KEY) !== "0"; } catch (e) { return true; }
+  }
+
+  function setAutoReset(on) {
+    try { localStorage.setItem(PREF_KEY, on ? "1" : "0"); } catch (e) {}
+    refreshKeyToggle();
+  }
+
+  function refreshKeyToggle() {
+    var on = autoResetOn();
+    keyToggle.textContent = "auto reset: " + (on ? "on" : "off");
+    keyToggle.title = on
+      ? "Refreshing mid-run starts a new run right away (a game key sits in the URL). Click to turn off."
+      : "Refreshing mid-run returns to this page. Click to turn on.";
+  }
+
+  /* ---------- game keys ----------
+     Like zetamac's /game?key=..., but self-describing: the key packs the
+     settings (and the hard-mode flag) into a few bytes, base64url-encoded,
+     so a URL carrying a key starts a run immediately on load or refresh and
+     works in any browser without server-side storage. */
+
+  function zigzag(n) { return n < 0 ? (-n * 2 - 1) : n * 2; }
+  function unzigzag(u) { return (u % 2) ? -(u + 1) / 2 : u / 2; }
+
+  function encodeKey(s, mode) {
+    var bytes = [];
+    bytes.push((s.add ? 1 : 0) | (s.sub ? 2 : 0) | (s.mul ? 4 : 0) | (s.div ? 8 : 0) |
+               (mode === "hard" ? 16 : 0));
+    [s.addL1, s.addH1, s.addL2, s.addH2, s.mulL1, s.mulH1, s.mulL2, s.mulH2, s.duration]
+      .forEach(function (n) {
+        var u = zigzag(Math.round(n) || 0);
+        while (u >= 128) { bytes.push((u % 128) | 128); u = Math.floor(u / 128); }
+        bytes.push(u);
+      });
+    var bin = "";
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  function decodeKey(key) {
+    try {
+      var b64 = key.replace(/-/g, "+").replace(/_/g, "/");
+      while (b64.length % 4) b64 += "=";
+      var bin = atob(b64), bytes = [];
+      for (var i = 0; i < bin.length; i++) bytes.push(bin.charCodeAt(i));
+      var flags = bytes[0], pos = 1, vals = [];
+      for (var k = 0; k < 9; k++) {
+        var u = 0, mult = 1, byte;
+        do {
+          if (pos >= bytes.length) return null;
+          byte = bytes[pos++];
+          u += (byte & 127) * mult;
+          mult *= 128;
+        } while (byte & 128);
+        vals.push(unzigzag(u));
+      }
+      var s = {
+        add: !!(flags & 1), sub: !!(flags & 2), mul: !!(flags & 4), div: !!(flags & 8),
+        addL1: vals[0], addH1: vals[1], addL2: vals[2], addH2: vals[3],
+        mulL1: vals[4], mulH1: vals[5], mulL2: vals[6], mulH2: vals[7],
+        duration: vals[8]
+      };
+      if (!(s.duration > 0)) return null;
+      return { settings: s, mode: (flags & 16) ? "hard" : "normal" };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function keyFromURL() {
+    var m = /[?&]key=([A-Za-z0-9_-]+)/.exec(location.search);
+    return m ? m[1] : null;
+  }
+
+  function setURLKey(key, push) {
+    var url = location.pathname + (key ? "?key=" + key : "");
+    if (location.pathname + location.search === url) return;
+    try {
+      if (push) history.pushState(null, "", url);
+      else history.replaceState(null, "", url);
+    } catch (e) { /* file:// or sandboxed contexts: the key simply won't stick */ }
+  }
+
+  function abortRun() {
+    if (timerId) { clearInterval(timerId); timerId = null; }
+    if (state) state.current = null;
+  }
+
+  /* Decide what to show from the URL: a valid key starts that run at once,
+     otherwise the start page. Runs on load and on back/forward navigation. */
+  function route() {
+    var key = keyFromURL();
+    var dec = key ? decodeKey(key) : null;
+    if (!dec) {
+      abortRun();
+      fillForm(ZTT.getSettings());
+      refreshHardNote();
+      show(startView);
+      if (key) setURLKey(null, false); // scrub an unreadable key
+      return;
+    }
+    fillForm(dec.settings);
+    startRun(dec.mode);
+  }
+
   /* ---------- views ---------- */
 
   function show(view) {
@@ -86,6 +207,7 @@
   /* ---------- run ---------- */
 
   function startRun(mode) {
+    abortRun();
     var settings = readForm();
     ZTT.setSettings(settings);
 
@@ -97,6 +219,7 @@
         fillForm(ZTT.getSettings());
         refreshHardNote();
         show(startView);
+        setURLKey(null, false);
         return;
       }
       /* shuffle the pool for variety */
@@ -105,6 +228,12 @@
         var t = queue[i]; queue[i] = queue[j]; queue[j] = t;
       }
     }
+
+    /* auto reset on: the key lands in the address bar so a refresh restarts
+       this exact run. Off: keep the URL clean (and quietly drop a key that
+       arrived via a link or bookmark) so a refresh returns to the start page. */
+    if (autoResetOn()) setURLKey(encodeKey(settings, mode), true);
+    else setURLKey(null, false);
 
     state = {
       mode: mode,
@@ -245,6 +374,8 @@
   document.getElementById("start-btn").addEventListener("click", function () { startRun("normal"); });
   document.getElementById("hard-btn").addEventListener("click", function () { startRun("hard"); });
 
+  keyToggle.addEventListener("click", function () { setAutoReset(!autoResetOn()); });
+
   document.getElementById("try-again").addEventListener("click", function (e) {
     e.preventDefault();
     fillForm(ZTT.getSettings());
@@ -253,6 +384,7 @@
 
   document.getElementById("change-settings").addEventListener("click", function (e) {
     e.preventDefault();
+    setURLKey(null, true);
     fillForm(ZTT.getSettings());
     refreshHardNote();
     show(startView);
@@ -276,6 +408,9 @@
   startView.addEventListener("change", refreshHardNote);
   startView.addEventListener("input", refreshHardNote);
 
-  fillForm(ZTT.getSettings());
-  refreshHardNote();
+  /* browser back/forward moves between the start page and keyed runs */
+  window.addEventListener("popstate", route);
+
+  refreshKeyToggle();
+  route();
 })();
