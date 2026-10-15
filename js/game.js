@@ -102,7 +102,7 @@
     var on = autoResetOn();
     keyToggle.textContent = "auto reset: " + (on ? "on" : "off");
     keyToggle.title = on
-      ? "Refreshing mid-run starts a new run right away (a game key sits in the URL). Click to turn off."
+      ? "Refreshing mid-run starts a new run right away. Click to turn off."
       : "Refreshing mid-run returns to this page. Click to turn on.";
   }
 
